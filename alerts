@@ -1,0 +1,54 @@
+provider "aws" {
+  region = "us-east-1" # Change as per your region
+}
+
+resource "aws_cloudwatch_metric_alarm" "redshift_cpu_alarm" {
+  alarm_name          = "DBA-${var.cluster_identifier}-${var.database_type}-${var.app_env}-CPUAlarm"
+  alarm_description   = "CPUUtilization > 85%"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/Redshift"
+  statistic           = "Average"
+  period              = 300
+  evaluation_periods  = 3
+  threshold           = 85
+  comparison_operator = "GreaterThanThreshold"
+
+  dimensions = {
+    ClusterIdentifier = var.cluster_identifier
+  }
+
+  alarm_actions = var.is_production ? [var.paging_notification_arn] : [var.non_paging_notification_arn]
+  ok_actions    = [var.non_paging_notification_arn]
+}
+
+# Variables for reusability
+variable "cluster_identifier" {
+  description = "The Redshift cluster identifier"
+  type        = string
+}
+
+variable "database_type" {
+  description = "Type of database"
+  type        = string
+}
+
+variable "app_env" {
+  description = "Application environment (e.g., dev, prod)"
+  type        = string
+}
+
+variable "is_production" {
+  description = "Boolean flag to determine if environment is production"
+  type        = bool
+  default     = false
+}
+
+variable "paging_notification_arn" {
+  description = "SNS topic ARN for paging notifications"
+  type        = string
+}
+
+variable "non_paging_notification_arn" {
+  description = "SNS topic ARN for non-paging notifications"
+  type        = string
+}
