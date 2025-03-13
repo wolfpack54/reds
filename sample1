@@ -1,0 +1,25 @@
+# Create SNS Topic
+resource "aws_sns_topic" "redshift_maintenance_topic" {
+  name = "redshift-maintenance-alerts"
+}
+
+# Subscribe email to SNS Topic
+resource "aws_sns_topic_subscription" "email_subscription" {
+  topic_arn = aws_sns_topic.redshift_maintenance_topic.arn
+  protocol  = "email"
+  endpoint  = "your-email@example.com"  # Replace with your email
+}
+
+# Create an EventBridge Rule for Pending Maintenance
+resource "aws_cloudwatch_event_rule" "redshift_maintenance_rule" {
+  name        = "redshift-maintenance-pending"
+  description = "Triggers when Redshift has pending maintenance"
+
+  event_pattern = jsonencode({
+    "source" : ["aws.redshift"],
+    "detail-type" : ["Redshift Cluster Maintenance"],
+    "detail" : {
+      "EventCategories" : ["maintenance"]
+    }
+  })
+}
